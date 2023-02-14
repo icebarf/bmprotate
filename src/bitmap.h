@@ -17,30 +17,76 @@
 
 typedef uint32_t u32;
 typedef uint16_t u16;
+typedef uint8_t u8;
 typedef int32_t i32;
 typedef int16_t i16;
 
-struct __attribute ((packed)) BITMAPFILE_HEADER
+struct __attribute ((packed)) BITMAP_HEADER
 {
     u16 bf_id;
     u32 bf_fsize;
     u32 bf_reserved;
     u32 bf_pixels_offset;
+
+    u32 bi_size;
+    i32 bi_width;
+    i32 bi_height;
+    u16 bi_panes;
+    u16 bi_bitcount;
+    u32 bi_compression;
+    u32 bi_sizeimage;
+    u32 bi_xpixels_permeter;
+    u32 bi_ypixels_permeter;
+    u32 bi_clrused;
+    u32 bi_clrimportant;
 };
 
-struct __attribute ((packed)) BITMAPINFO_HEADER
+struct Pixel_32bits
 {
-    u32 dib_size;
-    i32 dib_width;
-    i32 dib_height;
-    u16 dib_colorpanes;
-    u16 dib_bpp;
-    u32 dib_compression;
-    u32 dib_imgsize;
-    u32 dib_imghorres;
-    u32 dib_imgvertres;
-    u32 dib_ncolors;
-    u32 dib_impcolors;
+    u8 alpha;
+    u8 blue;
+    u8 green;
+    u8 red;
+};
+
+struct Pixel_24bits
+{
+    u8 blue;
+    u8 green;
+    u8 red;
+};
+
+struct Pixel_16bits
+{
+    u8 upperword;
+    u8 lowerword;
+};
+
+struct Pixel_8bits
+{
+    u8 pixel;
+};
+
+enum PIXEL_TYPE
+{
+    BITS_8 = 8,
+    BITS_16 = 16,
+    BITS_24 = 24,
+    BITS_32 = 32,
+};
+
+struct Image
+{
+    u32 width;
+    u32 height;
+    enum PIXEL_TYPE ptype;
+    union
+    {
+        struct Pixel_8bits *pixel8b;
+        struct Pixel_16bits *pixel16b;
+        struct Pixel_24bits *pixel24b;
+        struct Pixel_32bits *pixel32b;
+    };
 };
 
 enum DIB_COMPRESSION_METHOD
