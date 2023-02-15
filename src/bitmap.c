@@ -71,10 +71,10 @@ row_size (double img_width, enum PIXEL_TYPE bitcnt)
                                    sizeof (*img.pixel##BITCNT##b));           \
     if (img.pixel##BITCNT##b == NULL)                                         \
         return ALLOC_FAILURE;                                                 \
-    for (int32_t i = 0; i < img.height; i++)                                  \
+    for (uint32_t i = 0; i < img.height; i++)                                 \
         {                                                                     \
-            if (fread (img.pixel##BITCNT##b, 1, img.width * BYTECNT, bitmap)  \
-                != img.width * BYTECNT)                                       \
+            if (fread (img.pixel##BITCNT##b, BYTECNT, img.width, bitmap)      \
+                != img.width / BYTECNT)                                       \
                 return FREAD_FAILURE;                                         \
                                                                               \
             int32_t off = row_size (img.width, BITCNT) - img.width;           \
