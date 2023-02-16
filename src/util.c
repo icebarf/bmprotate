@@ -60,10 +60,21 @@ handle_code (enum RETCODES code, const char *msg, FILE *failed_file,
                              "in stream while reading metadata\n",
                              msg);
                 }
+            else
+                {
+                    fprintf (stderr,
+                             "%s: fread(): Error while reading, no "
+                             "information regarding cause\n",
+                             msg);
+                }
+            exit (EX_DATAERR);
+
+        case FWRITE_FAILURE:
+            fprintf (stderr, "%s: fwrite(): Failed to write data.\n", msg);
             exit (EX_DATAERR);
 
         default:
-            fprintf (stderr, "%s: Failure", msg);
+            fprintf (stderr, "%s: Failure\n", msg);
             exit (EX_TEMPFAIL);
         }
 }
