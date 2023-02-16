@@ -63,25 +63,38 @@ perform_metadata_checks (struct BITMAP_HEADER *metadata)
 __attribute ((warn_unused_result)) i32
 row_size (double img_width, enum PIXEL_TYPE bitcnt)
 {
-    return ceil ((img_width * bitcnt) / 32.0) * 4;
+
+    double roof = ceil (img_width * bitcnt / 32.0);
+    return roof * 4;
 }
 
 #define fread_img_data_generator(BITCNT, BYTECNT)                             \
-    img.pixel##BITCNT##b = calloc (img.width * abs_32b (metadata->bi_height), \
-                                   sizeof (*img.pixel##BITCNT##b));           \
-    if (img.pixel##BITCNT##b == NULL)                                         \
-        return ALLOC_FAILURE;                                                 \
-    for (uint32_t i = 0; i < img.height; i++)                                 \
-        {                                                                     \
-            if (fread (img.pixel##BITCNT##b, BYTECNT, img.width, bitmap)      \
-                != img.width / BYTECNT)                                       \
-                return FREAD_FAILURE;                                         \
+    {                                                                         \
+        img.pixel##BITCNT##b                                                  \
+            = calloc (img.width * abs_32b (metadata->bi_height),              \
+                      sizeof (*img.pixel##BITCNT##b));                        \
+        if (img.pixel##BITCNT##b == NULL)                                     \
+            return ALLOC_FAILURE;                                             \
+        unsigned long value = 0;                                              \
+        for (int32_t i = 0; i < img.height; i++)                              \
+            {                                                                 \
+                if ((value = fread (img.pixel##BITCNT##b, 1,                  \
+                                    img.width * BYTECNT, bitmap))             \
+                    != (unsigned long)(img.width * BYTECNT))                  \
+                    {                                                         \
+                        fprintf (stdout,                                      \
+                                 "i: %d\nftell(): %ld\nfread_ret = %ld\n", i, \
+                                 ftell (bitmap), value);                      \
+                        return FREAD_FAILURE;                                 \
+                    }                                                         \
                                                                               \
-            int32_t off = row_size (img.width, BITCNT) - img.width;           \
-            if (off > 0)                                                      \
-                if (fseek (bitmap, off, SEEK_CUR) != 0)                       \
-                    return OTHER_READ_FAILURE;                                \
-        }
+                int32_t off                                                   \
+                    = (row_size (img.width, BITCNT) / BYTECNT) - img.width;   \
+                if (off > 0)                                                  \
+                    if (fseek (bitmap, off, SEEK_CUR) != 0)                   \
+                        return OTHER_READ_FAILURE;                            \
+            }                                                                 \
+    }
 
 __attribute ((warn_unused_result)) enum RETCODES
 load_pixel_data (struct Image *outimg, struct BITMAP_HEADER *metadata,

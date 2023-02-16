@@ -77,8 +77,8 @@ enum PIXEL_TYPE
 
 struct Image
 {
-    u32 width;
-    u32 height;
+    i32 width;
+    i32 height;
     enum PIXEL_TYPE ptype;
     union
     {
