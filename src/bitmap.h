@@ -15,11 +15,7 @@
 
 #include <stdint.h>
 
-typedef uint32_t u32;
-typedef uint16_t u16;
-typedef uint8_t u8;
-typedef int32_t i32;
-typedef int16_t i16;
+#include "util.h"
 
 struct __attribute ((packed)) BITMAP_HEADER
 {
@@ -29,14 +25,14 @@ struct __attribute ((packed)) BITMAP_HEADER
     u32 bf_pixels_offset;
 
     u32 bi_size;
-    i32 bi_width;
-    i32 bi_height;
+    u32 bi_width;
+    u32 bi_height;
     u16 bi_panes;
     u16 bi_bitcount;
     u32 bi_compression;
     u32 bi_sizeimage;
-    u32 bi_xpixels_permeter;
-    u32 bi_ypixels_permeter;
+    i32 bi_xpixels_permeter;
+    i32 bi_ypixels_permeter;
     u32 bi_clrused;
     u32 bi_clrimportant;
 };
@@ -77,8 +73,8 @@ enum PIXEL_TYPE
 
 struct Image
 {
-    i32 width;
-    i32 height;
+    u32 width;
+    u32 height;
     enum PIXEL_TYPE ptype;
     union
     {
