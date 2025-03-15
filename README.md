@@ -1,7 +1,7 @@
 # bmprotate
-It's a small program I decided to rotate a couple years back. It was supposed to be simple, rotate a bitmap image by 90 degree clockwise and then back.
+It's a small program I decided to write a couple years back. It was supposed to be simple: rotate a bitmap image by 90 degree clockwise and then back.
 
-I didn't finish it back then but decided to finish it today since it was rather small.
+I didn't finish it back then but decided to complete it today since it was rather small.
 
 ### Build
 
