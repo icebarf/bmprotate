@@ -11,7 +11,6 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "bitmap.h"
-#include "util.h"
 
 #include <inttypes.h>
 #include <math.h>
@@ -149,6 +148,56 @@ write_back (struct BITMAP_HEADER *metadata, struct Image *img)
     fclose (out);
 }
 
+struct Image
+rotate (struct Image img)
+{
+    struct Image out;
+    out.height = img.width;
+    out.width = img.height;
+    out.ptype = img.ptype;
+    switch (out.ptype)
+        {
+        case BITS_8:
+            out.pixel8b = calloc ((unsigned long)(out.width * out.height), 1);
+            break;
+        case BITS_16:
+            out.pixel16b = calloc ((unsigned long)(out.width * out.height), 2);
+            break;
+        case BITS_24:
+            out.pixel24b = calloc ((unsigned long)(out.width * out.height), 3);
+            break;
+        case BITS_32:
+            out.pixel32b = calloc ((unsigned long)(out.width * out.height), 4);
+            break;
+        }
+
+    for (u32 i = 0; i < out.height; i++)
+        for (u32 j = 0; j < out.width; j++)
+            {
+                switch (out.ptype)
+                    {
+                    case BITS_8:
+                        out.pixel8b[(i * out.width) + j]
+                            = img.pixel8b[(j * img.width) + i];
+                        break;
+                    case BITS_16:
+                        out.pixel16b[(i * out.width) + j]
+                            = img.pixel16b[(j * img.width) + i];
+                        break;
+                    case BITS_24:
+                        out.pixel24b[(i * out.width) + j]
+                            = img.pixel24b[(j * img.width) + i];
+                        break;
+                    case BITS_32:
+                        out.pixel32b[(i * out.width) + j]
+                            = img.pixel32b[(j * img.width) + i];
+                        break;
+                    }
+            }
+
+    return out;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -200,7 +249,16 @@ main (int argc, char *argv[])
             handle_code (code, "load_pixel_data()", NULL, false);
         }
 
-    write_back (bitmap_metadata, &image);
+    struct Image rotated = rotate (image);
+
+    // metadata swapup
+    bitmap_metadata->bi_width = rotated.width;
+    bitmap_metadata->bi_height = rotated.height;
+    i32 temp = bitmap_metadata->bi_ypixels_permeter;
+    bitmap_metadata->bi_ypixels_permeter
+        = bitmap_metadata->bi_xpixels_permeter;
+    bitmap_metadata->bi_xpixels_permeter = temp;
+    write_back (bitmap_metadata, &rotated);
     fclose (bitmap);
     free (bitmap_metadata);
     return 0;
