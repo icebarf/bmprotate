@@ -41,7 +41,7 @@ struct __attribute ((packed)) BITMAP_HEADER
     u32 bi_clrimportant;
 };
 
-struct Pixel_32bits
+struct __attribute ((packed)) Pixel_32bits
 {
     u8 alpha;
     u8 blue;
@@ -49,20 +49,20 @@ struct Pixel_32bits
     u8 red;
 };
 
-struct Pixel_24bits
+struct __attribute ((packed)) Pixel_24bits
 {
     u8 blue;
     u8 green;
     u8 red;
 };
 
-struct Pixel_16bits
+struct __attribute ((packed)) Pixel_16bits
 {
     u8 upperword;
     u8 lowerword;
 };
 
-struct Pixel_8bits
+struct __attribute ((packed)) Pixel_8bits
 {
     u8 pixel;
 };

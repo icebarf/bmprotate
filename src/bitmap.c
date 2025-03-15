@@ -11,9 +11,8 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "bitmap.h"
-#include "benchmark.h"
 #include "util.h"
-#include <errno.h>
+
 #include <inttypes.h>
 #include <math.h>
 #include <stdint.h>
@@ -55,6 +54,7 @@ perform_metadata_checks (struct BITMAP_HEADER *metadata)
     fprintf (stdout, "DIB Header Size : %" PRId32 "\n", metadata->bi_size);
     fprintf (stdout, "Resolution:\nWidth: %" PRId32 "\nHeight: %" PRId32 "\n",
              metadata->bi_width, metadata->bi_height);
+    fprintf (stdout, "Bits: %d\n", metadata->bi_bitcount);
     if (metadata->bi_compression != BI_RGB)
         return INVALID_COMPRESSION_FORMAT;
     return SUCCESS;
@@ -64,35 +64,24 @@ __attribute ((warn_unused_result)) i32
 row_size (double img_width, enum PIXEL_TYPE bitcnt)
 {
 
-    double roof = ceil (img_width * bitcnt / 32.0);
-    return roof * 4;
+    double roof = ceil (img_width * (float)bitcnt / 32.0);
+    return (i32)roof * 4;
 }
 
 #define fread_img_data_generator(BITCNT, BYTECNT)                             \
     {                                                                         \
-        img.pixel##BITCNT##b                                                  \
-            = calloc (img.width * abs_32b (metadata->bi_height),              \
-                      sizeof (*img.pixel##BITCNT##b));                        \
+        unsigned long size                                                    \
+            = (unsigned long)(metadata->bi_width * metadata->bi_height);      \
+        img.pixel##BITCNT##b = calloc (size, sizeof (*img.pixel##BITCNT##b)); \
         if (img.pixel##BITCNT##b == NULL)                                     \
             return ALLOC_FAILURE;                                             \
         unsigned long value = 0;                                              \
-        for (int32_t i = 0; i < img.height; i++)                              \
+        if ((value = fread (img.pixel##BITCNT##b, BYTECNT, size, bitmap))     \
+            != size)                                                          \
             {                                                                 \
-                if ((value = fread (img.pixel##BITCNT##b, 1,                  \
-                                    img.width * BYTECNT, bitmap))             \
-                    != (unsigned long)(img.width * BYTECNT))                  \
-                    {                                                         \
-                        fprintf (stdout,                                      \
-                                 "i: %d\nftell(): %ld\nfread_ret = %ld\n", i, \
-                                 ftell (bitmap), value);                      \
-                        return FREAD_FAILURE;                                 \
-                    }                                                         \
-                                                                              \
-                int32_t off                                                   \
-                    = (row_size (img.width, BITCNT) / BYTECNT) - img.width;   \
-                if (off > 0)                                                  \
-                    if (fseek (bitmap, off, SEEK_CUR) != 0)                   \
-                        return OTHER_READ_FAILURE;                            \
+                fprintf (stdout, "ftell(): %ld\nfread_ret = %ld\n",           \
+                         ftell (bitmap), value);                              \
+                return FREAD_FAILURE;                                         \
             }                                                                 \
     }
 
@@ -127,6 +116,37 @@ load_pixel_data (struct Image *outimg, struct BITMAP_HEADER *metadata,
 
     *outimg = img;
     return SUCCESS;
+}
+
+void
+write_back (struct BITMAP_HEADER *metadata, struct Image *img)
+{
+    FILE *out = fopen ("out.bmp", "wb");
+    fwrite (metadata, 1, sizeof (struct BITMAP_HEADER), out);
+    switch (img->ptype)
+        {
+        case BITS_8:
+            fwrite (img->pixel24b, 1,
+                    (unsigned long)(metadata->bi_height * metadata->bi_width),
+                    out);
+            break;
+        case BITS_16:
+            fwrite (img->pixel24b, 2,
+                    (unsigned long)(metadata->bi_height * metadata->bi_width),
+                    out);
+            break;
+        case BITS_24:
+            fwrite (img->pixel24b, 3,
+                    (unsigned long)(metadata->bi_height * metadata->bi_width),
+                    out);
+            break;
+        case BITS_32:
+            fwrite (img->pixel24b, 4,
+                    (unsigned long)(metadata->bi_height * metadata->bi_width),
+                    out);
+            break;
+        }
+    fclose (out);
 }
 
 int
@@ -180,6 +200,7 @@ main (int argc, char *argv[])
             handle_code (code, "load_pixel_data()", NULL, false);
         }
 
+    write_back (bitmap_metadata, &image);
     fclose (bitmap);
     free (bitmap_metadata);
     return 0;
